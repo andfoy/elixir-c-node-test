@@ -1,5 +1,5 @@
 add_executable (erl_test
-  erl_test.c)
+  erl_test_original.c)
 
 target_include_directories(erl_test PRIVATE
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
@@ -10,4 +10,4 @@ target_compile_definitions(erl_test PRIVATE _REENTRANT)
 target_compile_options(erl_test PRIVATE -fsanitize=address)
 
 target_link_libraries(erl_test
-PRIVATE ei rt nsl pthread asan m)
+PRIVATE erl_interface ei rt nsl pthread asan m)
