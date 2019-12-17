@@ -111,7 +111,7 @@ int main(int argc, char **argv)
   while (loop)
   {
     got = ei_xreceive_msg(fd, &emsg, &buf);
-    printf("Got message %d", got)
+    printf("Got message %d", got);
     if (got == ERL_TICK)
     {
       /* ignore */
