@@ -110,9 +110,9 @@ int main(int argc, char **argv)
 
   while (loop)
   {
-    fprintf(stderr, "Waiting for a message to come?");
+    fprintf(stderr, "Waiting for a message to come?\n");
     got = ei_xreceive_msg(fd, &emsg, &buf);
-    fprintf(stderr, "Got message %d", got);
+    fprintf(stderr, "Got message %d\n", got);
     if (got == ERL_TICK)
     {
       /* ignore */
@@ -126,7 +126,7 @@ int main(int argc, char **argv)
 
       if (emsg.msgtype == ERL_REG_SEND)
       {
-        fprintf(stderr, "Some call goes here");
+        fprintf(stderr, "Some call goes here\n");
         // fromp = erl_element(2, emsg.msg);
         // tuplep = erl_element(3, emsg.msg);
         // fnp = erl_element(1, tuplep);
