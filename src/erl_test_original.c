@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
   erl_init(NULL, 0);
 
   addr.s_addr = inet_addr("127.0.0.1");
-  if (erl_connect_xinit("alpha", "cnode", "cnode@alpha.example.com",
+  if (erl_connect_xinit("localhost", "cnode", "cnode@127.0.0.1",
     &addr, "secretcookie", 0) == -1)
       erl_err_quit("erl_connect_xinit");
 
