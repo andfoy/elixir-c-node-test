@@ -110,7 +110,7 @@ int main(int argc, char **argv)
 
   while (loop)
   {
-    fprintf(stderr, "Waiting for a message to come?")
+    fprintf(stderr, "Waiting for a message to come?");
     got = ei_xreceive_msg(fd, &emsg, &buf);
     fprintf(stderr, "Got message %d", got);
     if (got == ERL_TICK)
