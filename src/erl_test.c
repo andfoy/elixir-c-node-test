@@ -127,6 +127,9 @@ int main(int argc, char **argv)
       if (emsg.msgtype == ERL_REG_SEND)
       {
         fprintf(stderr, "Some call goes here\n");
+        int index = 0;
+        ei_term term;
+        res = ei_decode_ei_term(buf.buff, &index, &term);
         // fromp = erl_element(2, emsg.msg);
         // tuplep = erl_element(3, emsg.msg);
         // fnp = erl_element(1, tuplep);
