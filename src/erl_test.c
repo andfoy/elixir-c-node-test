@@ -8,6 +8,7 @@
 
 // #include "erl_interface.h"
 #include "ei.h"
+#include "erl_test/utils.h"
 
 #define BUFSIZE 1000
 
@@ -66,6 +67,7 @@ int main(int argc, char **argv)
 
   port = atoi(argv[1]);
 
+  ei_x_new_with_version(&buf);
   ei_init();
 
   addr.s_addr = inet_addr("127.0.0.1");
@@ -127,9 +129,28 @@ int main(int argc, char **argv)
       if (emsg.msgtype == ERL_REG_SEND)
       {
         fprintf(stderr, "Some call goes here\n");
-        int index = 0;
+        int index = 1;     // Set to 1 due to version byte
         ei_term term;
-        res = ei_decode_ei_term(buf.buff, &index, &term);
+        ei_term term2;
+        int size;
+        int type;
+        char *buff = buf.buff;
+        res = ei_decode_ei_term(buff, &index, &term);
+        char term_type = term.ei_type;
+        switch (term_type)
+        {
+          case ERL_SMALL_TUPLE_EXT:
+            process_tuple(buff, &index, term.arity);
+            break;
+
+          default:
+            break;
+        }
+        // res = ei_decode_tuple_header(buff, &index, &size);
+        fprintf(stderr, "Decode result: %d\n", res);
+        res = ei_decode_ei_term(buff, &index, &term2);
+        fprintf(stderr, "Decode result: %d\n", res);
+        // fprintf(stderr, "Decode result: %d\n", res);
         // fromp = erl_element(2, emsg.msg);
         // tuplep = erl_element(3, emsg.msg);
         // fnp = erl_element(1, tuplep);

@@ -1,5 +1,6 @@
 add_executable (erl_test
-  erl_test.c)
+  erl_test.c
+  utils.c)
 
 target_include_directories(erl_test PRIVATE
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
