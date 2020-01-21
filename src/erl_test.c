@@ -12,42 +12,11 @@
 
 #define BUFSIZE 1000
 
-int foo(int x)
-{
-  return x + 1;
-}
-
-int bar(int y)
-{
-  return y * 2;
-}
-
-
-int my_listen(int port)
-{
-  int listen_fd;
-  struct sockaddr_in addr;
-  int on = 1;
-
-  if ((listen_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    return (-1);
-
-  setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
-
-  memset((void *)&addr, 0, (size_t)sizeof(addr));
-  addr.sin_family = AF_INET;
-  addr.sin_port = htons(port);
-  addr.sin_addr.s_addr = htonl(INADDR_ANY);
-
-  if (bind(listen_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0)
-    return (-1);
-
-  listen(listen_fd, 5);
-  return listen_fd;
-}
 
 int main(int argc, char **argv)
 {
+  (void)argc;
+
   struct in_addr addr; /* 32-bit IP number of host */
   int port;            /* Listen port number */
   int listen;          /* Listen socket */
@@ -147,9 +116,9 @@ int main(int argc, char **argv)
             break;
         }
         // res = ei_decode_tuple_header(buff, &index, &size);
-        fprintf(stderr, "Decode result: %d\n", res);
-        res = ei_decode_ei_term(buff, &index, &term2);
-        fprintf(stderr, "Decode result: %d\n", res);
+        // fprintf(stderr, "Decode result: %d\n", res);
+        // res = ei_decode_ei_term(buff, &index, &term2);
+        // fprintf(stderr, "Decode result: %d\n", res);
         // fprintf(stderr, "Decode result: %d\n", res);
         // fromp = erl_element(2, emsg.msg);
         // tuplep = erl_element(3, emsg.msg);
