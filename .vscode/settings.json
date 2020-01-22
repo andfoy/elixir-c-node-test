@@ -6,6 +6,7 @@
         "socket.h": "c",
         "types.h": "c",
         "stdio.h": "c",
-        "utils.h": "c"
+        "utils.h": "c",
+        "spawn.h": "c"
     }
 }

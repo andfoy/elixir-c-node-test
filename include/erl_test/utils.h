@@ -8,6 +8,7 @@
 #define __UTILS_H
 
 void process_tuple(char* buff, int *index, int size);
+int exec_prog(const char **argv);
 int my_listen(int port);
 int foo(int x);
 int bar(int x);

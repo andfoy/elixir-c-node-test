@@ -12,10 +12,13 @@
 
 #define BUFSIZE 1000
 
-
 int main(int argc, char **argv)
 {
   (void)argc;
+
+  const char *epmd_argv[64] = {"epmd", "-daemon", NULL}; /* EPMD args */
+
+  // char *epmd_argv[] = { "epmd", "-daemon", NULL };
 
   struct in_addr addr; /* 32-bit IP number of host */
   int port;            /* Listen port number */
@@ -25,11 +28,11 @@ int main(int argc, char **argv)
   ei_cnode ec;         /* C node information */
   ErlConnect conn;     /* Connection data */
 
-  int loop = 1;               /* Lopp flag */
-  int got;                    /* Result of receive */
+  int loop = 1; /* Lopp flag */
+  int got;      /* Result of receive */
   // unsigned char buf[BUFSIZE]; /* Buffer for incoming message */
-  ei_x_buff buf;              /* Buffer for incoming message */
-  erlang_msg emsg;        /* Incoming message */
+  ei_x_buff buf;   /* Buffer for incoming message */
+  erlang_msg emsg; /* Incoming message */
 
   // ETERM *fromp, *tuplep, *fnp, *argp, *resp;
   int res;
@@ -38,6 +41,9 @@ int main(int argc, char **argv)
 
   ei_x_new_with_version(&buf);
   ei_init();
+
+  // Starting EPMD before starting node
+  int rc = exec_prog(epmd_argv);
 
   addr.s_addr = inet_addr("127.0.0.1");
   // if (ei_connect_xinit("localhost", "testc", "test@127.0.0.1",
@@ -98,7 +104,7 @@ int main(int argc, char **argv)
       if (emsg.msgtype == ERL_REG_SEND)
       {
         fprintf(stderr, "Some call goes here\n");
-        int index = 1;     // Set to 1 due to version byte
+        int index = 1; // Set to 1 due to version byte
         ei_term term;
         ei_term term2;
         int size;
@@ -108,12 +114,12 @@ int main(int argc, char **argv)
         char term_type = term.ei_type;
         switch (term_type)
         {
-          case ERL_SMALL_TUPLE_EXT:
-            process_tuple(buff, &index, term.arity);
-            break;
+        case ERL_SMALL_TUPLE_EXT:
+          process_tuple(buff, &index, term.arity);
+          break;
 
-          default:
-            break;
+        default:
+          break;
         }
         // res = ei_decode_tuple_header(buff, &index, &size);
         // fprintf(stderr, "Decode result: %d\n", res);
