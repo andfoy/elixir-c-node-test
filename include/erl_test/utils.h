@@ -7,8 +7,7 @@
 #ifndef __UTILS_H
 #define __UTILS_H
 
-void process_tuple(char* buff, int *index, int size);
-int exec_prog(const char **argv);
+void process_tuple(char* buff, int *index, int size, int fd);
 int my_listen(int port);
 int foo(int x);
 int bar(int x);

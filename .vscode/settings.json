@@ -7,6 +7,9 @@
         "types.h": "c",
         "stdio.h": "c",
         "utils.h": "c",
-        "spawn.h": "c"
+        "spawn.h": "c",
+        "uthash.h": "c",
+        "dispatchers.h": "c",
+        "unistd.h": "c"
     }
 }

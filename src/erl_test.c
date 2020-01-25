@@ -9,6 +9,7 @@
 // #include "erl_interface.h"
 #include "ei.h"
 #include "erl_test/utils.h"
+#include "erl_test/dispatchers.h"
 
 #define BUFSIZE 1000
 
@@ -36,6 +37,8 @@ int main(int argc, char **argv)
 
   // ETERM *fromp, *tuplep, *fnp, *argp, *resp;
   int res;
+
+  register_handlers();
 
   port = atoi(argv[1]);
 
@@ -115,7 +118,7 @@ int main(int argc, char **argv)
         switch (term_type)
         {
         case ERL_SMALL_TUPLE_EXT:
-          process_tuple(buff, &index, term.arity);
+          process_tuple(buff, &index, term.arity, fd);
           break;
 
         default:
