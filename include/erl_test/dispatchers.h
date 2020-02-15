@@ -7,9 +7,10 @@
 #ifndef __DISPATCHERS_H
 #define __DISPATCHERS_H
 
-typedef void (*message_handler)(char *, int *, erlang_pid, int);
+typedef void (*message_handler)(char *, int *, ei_cnode, erlang_pid, int);
 
-void kill_process(char *buff, int *index, erlang_pid pid, int fd);
+void kill_process(char *buff, int *index, ei_cnode cnode, erlang_pid pid, int fd);
+void sampling(char *buff, int *index, ei_cnode cnode, erlang_pid pid, int fd);
 void register_handler(char *name, message_handler func);
 void register_handlers(void);
 

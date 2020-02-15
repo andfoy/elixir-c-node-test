@@ -4,6 +4,6 @@
 #ifndef __SPAWN_H
 #define __SPAWN_H
 
-int exec_prog(const char *argv);
+int spawn_epmd(void);
 
 #endif  // _SPAWN_H

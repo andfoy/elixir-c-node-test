@@ -5,13 +5,25 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/eventfd.h>
+#include <sys/select.h>
+#include <sys/epoll.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <assert.h>
 
 // #include "erl_interface.h"
 #include "ei.h"
+
+#include "erl_test/io.h"
+#include "erl_test/spawn.h"
 #include "erl_test/utils.h"
+#include "erl_test/sampling.h"
 #include "erl_test/dispatchers.h"
 
 #define BUFSIZE 1000
+#define MAX_EVENTS 10
+
 
 int main(int argc, char **argv)
 {
@@ -25,15 +37,18 @@ int main(int argc, char **argv)
   int port;            /* Listen port number */
   int listen;          /* Listen socket */
   int fd;              /* fd to Erlang node */
-  int n = 0;           /*  */
-  ei_cnode ec;         /* C node information */
-  ErlConnect conn;     /* Connection data */
+  int efd;
+  int max_fd;
+  int n_bytes;
+  int nfds;
+  msg_struct outgoing;
+  int n = 0;       /*  */
+  ei_cnode ec;     /* C node information */
+  ErlConnect conn; /* Connection data */
 
   int loop = 1; /* Lopp flag */
   int got;      /* Result of receive */
   // unsigned char buf[BUFSIZE]; /* Buffer for incoming message */
-  ei_x_buff buf;   /* Buffer for incoming message */
-  erlang_msg emsg; /* Incoming message */
 
   // ETERM *fromp, *tuplep, *fnp, *argp, *resp;
   int res;
@@ -41,119 +56,121 @@ int main(int argc, char **argv)
   register_handlers();
 
   port = atoi(argv[1]);
+  int sampling_port = atoi(argv[2]);
 
-  ei_x_new_with_version(&buf);
   ei_init();
 
   // Starting EPMD before starting node
-  int rc = exec_prog(epmd_argv);
+  int rc = spawn_epmd();
 
   addr.s_addr = inet_addr("127.0.0.1");
+
+  node_s sampling_info;
+  sampling_info.addr = &addr;
+  sampling_info.cookie = "secretcookie";
+  sampling_info.hostname = "localhost";
+  sampling_info.ip = "127.0.0.1";
+  sampling_info.node_name = "sampling";
+  sampling_info.port = sampling_port;
   // if (ei_connect_xinit("localhost", "testc", "test@127.0.0.1",
   //   &addr, "secretcookie", 0) == -1)
   //     erl_err_quit("erl_connect_xinit");
+  start_sampling(&sampling_info);
+  fd = start_socket(&ec, &addr, port, "cmd", "localhost", "127.0.0.1", "secretcookie");
 
-  if (ei_connect_xinit(&ec,
-                       "localhost",
-                       "testc",
-                       "testc@127.0.0.1",
-                       &addr,
-                       "secretcookie",
-                       n++) < 0)
+  // Initialize eventfd signaling
+  efd = eventfd(0, 0);
+  max_fd = efd;
+  // fd_set master;
+  // FD_ZERO(&master);
+  // safe_fd_set(efd, &master, &max_fd);
+  // safe_fd_set(fd, &master, &max_fd);
+
+  n_bytes = sizeof(msg_struct);
+
+  struct epoll_event event, events[MAX_EVENTS];
+
+  int epollfd = epoll_create1(0);
+  if (epollfd == -1)
   {
-    fprintf(stderr, "ERROR when initializing: %d", erl_errno);
-    exit(-1);
+    perror("epoll_create1");
+    exit(EXIT_FAILURE);
   }
 
-  /* Make a listen socket */
-  if ((listen = my_listen(port)) <= 0)
-  {
-    fprintf(stderr, "ERROR when initializing socket");
-    exit(-1);
-    // erl_err_quit("my_listen");
-  }
+  event.events = EPOLLIN; // | EPOLLOUT;
+  event.data.fd = fd;
 
-  if (ei_publish(&ec, port) == -1)
+  if (epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event) == -1)
   {
-    fprintf(stderr, "ERROR when trying to publish on the port %d: %d", port, erl_errno);
-    exit(-1);
+    perror("epoll_ctl: listen_sock");
+    exit(EXIT_FAILURE);
   }
-  // erl_err_quit("erl_publish");
-
-  if ((fd = ei_accept(&ec, listen, &conn)) == ERL_ERROR)
-  {
-    fprintf(stderr, "ERROR when accepting a connection: %d", erl_errno);
-    exit(-1);
-    // erl_err_quit("erl_accept");
-  }
-  fprintf(stderr, "Connected to %s\n\r", conn.nodename);
 
   while (loop)
   {
-    fprintf(stderr, "Waiting for a message to come?\n");
-    got = ei_xreceive_msg(fd, &emsg, &buf);
-    fprintf(stderr, "Got message %d\n", got);
-    if (got == ERL_TICK)
+    fprintf(stderr, "Waiting for events!\n");
+    nfds = epoll_wait(epollfd, events, MAX_EVENTS, -1);
+    fprintf(stderr, "%d available events!\n", nfds);
+    for (int n = 0; n < nfds; n++)
     {
-      /* ignore */
-    }
-    else if (got == ERL_ERROR)
-    {
-      loop = 0;
-    }
-    else
-    {
-
-      if (emsg.msgtype == ERL_REG_SEND)
+      if (events[n].events & EPOLLIN)
       {
-        fprintf(stderr, "Some call goes here\n");
-        int index = 1; // Set to 1 due to version byte
-        ei_term term;
-        ei_term term2;
-        int size;
-        int type;
-        char *buff = buf.buff;
-        res = ei_decode_ei_term(buff, &index, &term);
-        char term_type = term.ei_type;
-        switch (term_type)
+        ei_x_buff buf;   /* Buffer for incoming message */
+        erlang_msg emsg; /* Incoming message */
+        ei_x_new_with_version(&buf);
+        fprintf(stderr, "Waiting for a message to come?\n");
+        // got = ei_xreceive_msg(fd, &emsg, &buf);
+        got = receive_msg(fd, &emsg, &buf);
+        fprintf(stderr, "Got message %d\n", got);
+        if (got == ERL_TICK)
         {
-        case ERL_SMALL_TUPLE_EXT:
-          process_tuple(buff, &index, term.arity, fd);
-          break;
-
-        default:
-          break;
+          /* ignore */
         }
-        // res = ei_decode_tuple_header(buff, &index, &size);
-        // fprintf(stderr, "Decode result: %d\n", res);
-        // res = ei_decode_ei_term(buff, &index, &term2);
-        // fprintf(stderr, "Decode result: %d\n", res);
-        // fprintf(stderr, "Decode result: %d\n", res);
-        // fromp = erl_element(2, emsg.msg);
-        // tuplep = erl_element(3, emsg.msg);
-        // fnp = erl_element(1, tuplep);
-        // argp = erl_element(2, tuplep);
+        else if (got == ERL_ERROR)
+        {
+          if (erl_errno != ERL_TIMEOUT)
+          {
+            loop = 0;
+            fprintf(stderr, "Unexpected disconnection\n");
+          }
+        }
+        else
+        {
 
-        // if (strncmp(ERL_ATOM_PTR(fnp), "foo", 3) == 0)
-        // {
-        //   res = foo(ERL_INT_VALUE(argp));
-        // }
-        // else if (strncmp(ERL_ATOM_PTR(fnp), "bar", 3) == 0)
-        // {
-        //   res = bar(ERL_INT_VALUE(argp));
-        // }
+          if (emsg.msgtype == ERL_REG_SEND)
+          {
+            fprintf(stderr, "Some call goes here\n");
+            int index = 1; // Set to 1 due to version byte
+            ei_term term;
+            int size;
+            int type;
+            char *buff = buf.buff;
+            res = ei_decode_ei_term(buff, &index, &term);
+            char term_type = term.ei_type;
+            switch (term_type)
+            {
+            case ERL_SMALL_TUPLE_EXT:
+              process_tuple(buff, &index, term.arity, ec, efd);
+              break;
 
-        // resp = erl_format("{cnode, ~i}", res);
-        // erl_send(fd, fromp, resp);
-
-        // erl_free_term(emsg.from);
-        // erl_free_term(emsg.msg);
-        // erl_free_term(fromp);
-        // erl_free_term(tuplep);
-        // erl_free_term(fnp);
-        // erl_free_term(argp);
-        // erl_free_term(resp);
+            default:
+              break;
+            }
+          }
+        }
+        ei_x_free(&buf);
+      }
+      if (events[n].events & EPOLLOUT) {
+        fprintf(stderr, "Available to write\n");
       }
     }
+    // outgoing.buff = malloc(sizeof(ei_x_buff));
+    // outgoing.recipient = malloc(sizeof(erlang_pid));
+    // read(efd, &outgoing, n_bytes);
+    // erlang_pid *to = outgoing.recipient;
+    // ei_x_buff *buff = outgoing.buff;
+    // ei_send(fd, to, buff->buff, buff->index);
+    // ei_x_free(buff);
+
   } /* while */
 }

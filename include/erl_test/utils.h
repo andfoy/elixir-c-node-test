@@ -7,9 +7,8 @@
 #ifndef __UTILS_H
 #define __UTILS_H
 
-void process_tuple(char* buff, int *index, int size, int fd);
-int my_listen(int port);
-int foo(int x);
-int bar(int x);
+void dispatch_message(char *msg_type, char *buff, int *index, int size,
+                      ei_cnode cnode, erlang_pid pid, int fd);
+void process_tuple(char* buff, int *index, int size, ei_cnode cnode, int fd);
 
 #endif  // _UTILS_H

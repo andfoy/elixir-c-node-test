@@ -8,7 +8,7 @@
 #include "erl_test/spawn.h"
 
 
-int exec_prog(const char *argr)
+int spawn_epmd(void)
 {
     pid_t my_pid;
     int status, timeout /* unused ifdef WAIT_FOR_COMPLETION */;
@@ -23,9 +23,6 @@ int exec_prog(const char *argr)
     {
         "HOME=/",
         "PATH=/bin:/usr/bin",
-        "TZ=UTC0",
-        "USER=beelzebub",
-        "LOGNAME=tarzan",
         NULL
     };
 
